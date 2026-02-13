@@ -1,0 +1,58 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Suggested Purchases - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Suggested Purchases</h2>
+        <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    {% if rows %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock</th>
+                        <th>Threshold</th>
+                        <th>Suggested Qty</th>
+                        <th>Expiry</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr>
+                            <td>{{ r.product.name }}</td>
+                            <td>{{ r.product.stock_quantity }}</td>
+                            <td>{{ r.product.reorder_threshold }}</td>
+                            <td>{{ r.suggested_qty }}</td>
+                            <td>
+                                {% if r.product.expiry_date %}
+                                    {{ r.product.expiry_date|date:"d M Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.expired %}
+                                    <span style="color: red;">Expired</span>
+                                {% elif r.near %}
+                                    <span style="color: #ef6c00;">Expiring in {{ near_days }} days</span>
+                                {% elif r.low %}
+                                    <span style="color: red;">Low stock</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No suggestions at the moment.</p>
+    {% endif %}
+{% endblock %}
+

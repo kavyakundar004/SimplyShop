@@ -1,0 +1,177 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Checkout - Grocery Shop{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2>Checkout</h2>
+    <div class="card">
+        <div class="card-body">
+            <p><strong>Total Amount:</strong> {{ total_amount|currency }}</p>
+            
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="form-group" style="position: relative;">
+                    <label for="name">Full Name</label>
+                    <input type="text" name="name" required class="form-control" id="name" autocomplete="off" data-lookup-url="{% url 'customer_lookup' %}" data-suggest-url="{% url 'customer_suggest' %}">
+                    <div id="customer-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; z-index: 10; display: none; max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" name="phone" required class="form-control" id="phone">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Delivery Address</label>
+                    <textarea name="address" rows="4" required class="form-control" id="address"></textarea>
+                </div>
+                
+                <h3 style="margin-top: 1rem;">Payment</h3>
+                <p style="color:#666;">You can split payment into two methods. Ensure the total equals {{ total_amount|currency }}.</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label>Method 1</label>
+                        <select name="payment_method_1" class="form-control" required>
+                            <option value="">-- Select --</option>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount 1</label>
+                        <input type="number" step="0.01" name="payment_amount_1" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference 1 (optional)</label>
+                        <input type="text" name="payment_ref_1" class="form-control" placeholder="Txn ID / last 4 digits">
+                    </div>
+                    <div class="form-group">
+                        <label>Method 2 (optional)</label>
+                        <select name="payment_method_2" class="form-control">
+                            <option value="">-- Select --</option>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount 2 (optional)</label>
+                        <input type="number" step="0.01" name="payment_amount_2" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Reference 2 (optional)</label>
+                        <input type="text" name="payment_ref_2" class="form-control" placeholder="Txn ID / last 4 digits">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-block">Place Order</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var nameInput = document.getElementById("name");
+    var phoneInput = document.getElementById("phone");
+    var addressInput = document.getElementById("address");
+    if (!nameInput || !phoneInput || !addressInput) {
+        return;
+    }
+    var lookupUrl = nameInput.getAttribute("data-lookup-url");
+    var suggestUrl = nameInput.getAttribute("data-suggest-url");
+    var suggestionsBox = document.getElementById("customer-suggestions");
+    var timeoutId = null;
+    nameInput.addEventListener("input", function() {
+        var value = nameInput.value.trim();
+        if (!lookupUrl && !suggestUrl) {
+            return;
+        }
+        if (timeoutId) {
+            window.clearTimeout(timeoutId);
+        }
+        if (!value) {
+            if (suggestionsBox) {
+                suggestionsBox.style.display = "none";
+                suggestionsBox.innerHTML = "";
+            }
+            phoneInput.value = "";
+            addressInput.value = "";
+            return;
+        }
+        timeoutId = window.setTimeout(function() {
+            if (suggestUrl) {
+                var su = suggestUrl + "?q=" + encodeURIComponent(value);
+                fetch(su, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (!suggestionsBox) {
+                            return;
+                        }
+                        var results = data.results || [];
+                        if (!results.length) {
+                            suggestionsBox.style.display = "none";
+                            suggestionsBox.innerHTML = "";
+                            phoneInput.value = "";
+                            addressInput.value = "";
+                            return;
+                        }
+                        var html = "";
+                        for (var i = 0; i < results.length; i++) {
+                            var r = results[i];
+                            var text = r.name;
+                            if (r.phone) {
+                                text += " (" + r.phone + ")";
+                            }
+                            html += '<div data-name="' + (r.name || "") + '" data-phone="' + (r.phone || "") + '" data-address="' + (r.address || "") + '" style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee;">' + text + "</div>";
+                        }
+                        suggestionsBox.innerHTML = html;
+                        suggestionsBox.style.display = "block";
+                    })
+                    .catch(function() {});
+            } else if (lookupUrl) {
+                var url = lookupUrl + "?name=" + encodeURIComponent(value);
+                fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (!data.found) {
+                            return;
+                        }
+                        if (data.phone) {
+                            phoneInput.value = data.phone;
+                        }
+                        if (data.address) {
+                            addressInput.value = data.address;
+                        }
+                    })
+                    .catch(function() {});
+            }
+        }, 300);
+    });
+    if (suggestionsBox) {
+        suggestionsBox.addEventListener("click", function(e) {
+            var target = e.target;
+            if (!target || !target.getAttribute) {
+                return;
+            }
+            var name = target.getAttribute("data-name") || "";
+            var phone = target.getAttribute("data-phone") || "";
+            var address = target.getAttribute("data-address") || "";
+            if (name) {
+                nameInput.value = name;
+            }
+            if (phone) {
+                phoneInput.value = phone;
+            }
+            if (address) {
+                addressInput.value = address;
+            }
+            suggestionsBox.style.display = "none";
+            suggestionsBox.innerHTML = "";
+        });
+    }
+})();
+</script>
+{% endblock %}

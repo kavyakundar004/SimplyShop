@@ -1,0 +1,102 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Manage Customers - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Manage Customers</h2>
+        <a href="{% url 'customer_details' %}" class="btn btn-secondary">Back to Customer Details</a>
+    </div>
+
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-body">
+            <h3>{% if customer_to_edit %}Edit Customer{% else %}Add Customer{% endif %}</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="customer_id" value="{{ customer_to_edit.id|default:'' }}">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="name" class="form-control" required value="{{ customer_to_edit.name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" name="phone" class="form-control" value="{{ customer_to_edit.phone|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" name="address" class="form-control" value="{{ customer_to_edit.address|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" name="notes" class="form-control" value="{{ customer_to_edit.notes|default:'' }}">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 1.8rem;">
+                        <input type="checkbox" name="is_active" id="id_is_active_customer" {% if customer_to_edit %}{% if customer_to_edit.is_active %}checked{% endif %}{% else %}checked{% endif %}>
+                        <label for="id_is_active_customer">Active</label>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button type="submit" class="btn">{% if customer_to_edit %}Update{% else %}Add{% endif %} Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if customers %}
+        <div class="card">
+            <div class="card-body">
+                <h3>All Customers</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Last Reminder</th>
+                                <th>Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                                <tr>
+                                    <td>{{ customer.name }}</td>
+                                    <td>{{ customer.phone }}</td>
+                                    <td>{{ customer.address }}</td>
+                                    <td>
+                                        {{ customer.last_reminder_date|date:"d M"|default:"-" }}
+                                        <form method="post" style="display:inline-block; margin-left: 5px;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="mark_reminder_id" value="{{ customer.id }}">
+                                            <button type="submit" class="btn btn-secondary" style="padding: 2px 6px; font-size: 0.8rem;" title="Mark Reminder Sent">✓</button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        {% if customer.is_active %}
+                                            <span style="color: green;">Active</span>
+                                        {% else %}
+                                            <span style="color: grey;">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="?edit={{ customer.id }}" class="btn btn-secondary" style="padding: 5px 10px;">Edit</a>
+                                        <form method="post" action="" style="display:inline-block; margin-left: 5px;" onsubmit="return confirm('Delete this customer?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="delete_customer_id" value="{{ customer.id }}">
+                                            <button type="submit" class="btn btn-danger" style="padding: 5px 10px;">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p>No customers found.</p>
+    {% endif %}
+{% endblock %}
+

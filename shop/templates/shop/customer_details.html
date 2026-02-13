@@ -1,0 +1,107 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Customers - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+        <h2>Customer Details</h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'manage_customers' %}" class="btn btn-secondary">Manage Customers</a>
+            <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <form method="get" style="margin-bottom: 1.5rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Customer</label>
+            <input type="text" name="customer" class="form-control" placeholder="Search by name" value="{{ current_customer }}" list="customer-suggestions">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Period</label>
+            <select name="period" class="form-control">
+                <option value="day" {% if current_period == 'day' %}selected{% endif %}>Today</option>
+                <option value="week" {% if current_period == 'week' %}selected{% endif %}>This Week</option>
+                <option value="month" {% if current_period == 'month' %}selected{% endif %}>This Month</option>
+                <option value="all" {% if current_period == 'all' %}selected{% endif %}>All Time</option>
+            </select>
+        </div>
+    </form>
+
+    {% if customer_rows %}
+        <datalist id="customer-suggestions">
+            {% for row in customer_rows %}
+                <option value="{{ row.customer.name }}"></option>
+            {% endfor %}
+        </datalist>
+    {% endif %}
+
+    {% if customer_rows %}
+        <div class="table-responsive">
+            <table id="customer-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Products Purchased</th>
+                        <th>Total Purchase Amount</th>
+                        <th>Outstanding Udhari</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in customer_rows %}
+                        <tr>
+                            <td>{{ row.customer.name }}</td>
+                            <td>{{ row.customer.phone }}</td>
+                            <td>{{ row.total_products }}</td>
+                            <td>{{ row.total_spent|currency }}</td>
+                            <td>{{ row.outstanding|currency }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No customers found for this filter.</p>
+    {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var form = document.querySelector('form[method="get"]');
+            var nameInput = document.querySelector('input[name="customer"]');
+            var periodSelect = document.querySelector('select[name="period"]');
+            var table = document.getElementById("customer-table");
+
+            if (periodSelect && form) {
+                periodSelect.addEventListener("change", function () {
+                    form.submit();
+                });
+            }
+
+            function applyCustomerFilter() {
+                if (!table || !nameInput) {
+                    return;
+                }
+                var filterText = nameInput.value.toLowerCase();
+                var rows = table.querySelectorAll("tbody tr");
+                rows.forEach(function (row) {
+                    var nameCell = row.querySelector("td");
+                    if (!nameCell) {
+                        return;
+                    }
+                    var customerName = nameCell.textContent.toLowerCase();
+                    if (!filterText || customerName.indexOf(filterText) !== -1) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            }
+
+            if (nameInput) {
+                nameInput.addEventListener("input", applyCustomerFilter);
+                applyCustomerFilter();
+            }
+        });
+    </script>
+{% endblock %}

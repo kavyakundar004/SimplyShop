@@ -1,0 +1,67 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Order Placed - Grocery Shop{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 2rem auto;">
+    <div class="card">
+        <div class="card-body">
+            <div style="display:flex; justify-content: space-between; align-items:center;">
+                <h2 style="margin:0;">Receipt</h2>
+                <div>
+                    <button onclick="window.print()" class="btn btn-secondary" style="margin-right:8px;">Print</button>
+                    <a class="btn btn-secondary" href="https://wa.me/?text={{ share_text|urlencode }}" target="_blank">Share WhatsApp</a>
+                    {% if order.customer_phone %}
+                        <a class="btn btn-secondary" href="sms:{{ order.customer_phone }}?body={{ share_text|urlencode }}">Share SMS</a>
+                    {% endif %}
+                </div>
+            </div>
+            <hr>
+            <p><strong>Order:</strong> #{{ order.id }}</p>
+            <p><strong>Customer:</strong> {{ order.customer_name }}{% if order.customer_phone %} ({{ order.customer_phone }}){% endif %}</p>
+            <p><strong>Address:</strong> {{ order.customer_address }}</p>
+            <p><strong>Date:</strong> {{ order.created_at|date:"d M Y, H:i" }}</p>
+            <div class="table-responsive" style="margin-top:1rem;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th>Discount</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price|currency }}</td>
+                                <td>{{ item.discount_amount|currency }}</td>
+                                <td>{{ item.subtotal|currency }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+                <div>
+                    <p style="text-align:right;"><strong>Total:</strong> {{ order.total_amount|currency }}</p>
+                    {% if order.payments.all %}
+                        <p style="text-align:right;"><strong>Payments:</strong>
+                            {% for p in order.payments.all %}
+                                {{ p.method|title }} {{ p.amount|currency }}{% if p.reference %} ({{ p.reference }}){% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align:center; margin-top: 1rem;">
+        <a href="{% url 'product_list' %}" class="btn">Continue Shopping</a>
+    </div>
+</div>
+{% endblock %}

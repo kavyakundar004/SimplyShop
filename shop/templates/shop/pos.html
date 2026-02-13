@@ -1,0 +1,108 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Quick POS - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div class="pos-layout">
+        <div class="pos-left">
+            <div class="card pos-panel">
+                <div class="card-body">
+                    <div class="pos-toolbar">
+                        <input type="text" id="pos-search" class="form-control pos-search-input" placeholder="Search products (press / to focus)">
+                        <select id="pos-category" class="form-control pos-category-select">
+                            <option value="">All</option>
+                            {% for c in categories %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="pos-products">
+                        {% for product in products %}
+                            <button type="button" class="pos-product-card" data-name="{{ product.name|lower }}" data-category="{{ product.category_id }}">
+                                <div class="pos-product-main">
+                                    <div class="pos-product-name">{{ product.name }}</div>
+                                    <div class="pos-product-price">{{ product.price|currency }}</div>
+                                </div>
+                                <div class="pos-product-actions">
+                                    <input type="number" min="1" value="1" class="form-control pos-qty-input" />
+                                    <span class="btn btn-secondary pos-add" data-id="{{ product.id }}">Add</span>
+                                </div>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="pos-right">
+            <div class="card pos-panel">
+                <div class="card-body">
+                    <h3 class="pos-cart-title">Cart</h3>
+                    <div id="pos-cart-info" class="pos-cart-hint">Press C to focus cart; Enter to add selected.</div>
+                    <a href="{% url 'cart_summary' %}" class="btn btn-secondary pos-cart-link">View Cart</a>
+                    <form method="post" action="{% url 'checkout' %}" class="pos-checkout-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="address" value="POS">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" name="name" class="form-control" value="Walk-in" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" name="phone" class="form-control" placeholder="Optional">
+                        </div>
+                        <button type="submit" class="btn btn-block">Place Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            const search = document.getElementById('pos-search');
+            const category = document.getElementById('pos-category');
+            const cards = Array.from(document.querySelectorAll('[data-name]'));
+
+            function filter() {
+                const q = (search.value || '').toLowerCase();
+                const cat = category.value || '';
+                cards.forEach(card => {
+                    const matchName = card.dataset.name.includes(q);
+                    const matchCat = !cat || card.dataset.category === cat;
+                    card.style.display = (matchName && matchCat) ? '' : 'none';
+                });
+            }
+            search.addEventListener('input', filter);
+            category.addEventListener('change', filter);
+
+            document.querySelectorAll('.pos-add').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = btn.dataset.id;
+                    const qtyInput = btn.closest('.pos-product-card').querySelector('input[type=number]');
+                    const qty = parseInt(qtyInput.value || '1', 10);
+                    if (qty < 1) return;
+                    try {
+                        await fetch("{% url 'add_to_cart' 0 %}".replace('0', id), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
+                            body: new URLSearchParams({ quantity: qty.toString() })
+                        });
+                        const badge = document.querySelector('.cart-badge');
+                        if (badge) {
+                            const current = parseInt(badge.textContent || '0', 10);
+                            badge.textContent = (current + qty).toString();
+                        }
+                    } catch (err) {}
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '/') {
+                    e.preventDefault();
+                    search.focus();
+                }
+            });
+        })();
+    </script>
+{% endblock %}

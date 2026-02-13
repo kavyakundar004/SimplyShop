@@ -1,0 +1,62 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Cart - Grocery Shop{% endblock %}
+
+{% block content %}
+    <h2>Your Cart</h2>
+
+    {% if cart_items %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.product.name }}</strong><br>
+                                <small>{{ item.product.description|truncatechars:30 }}</small>
+                            </td>
+                            <td>
+                                {% if item.discount > 0 %}
+                                    <span style="text-decoration: line-through; color: #888;">{{ item.product.price|currency }}</span><br>
+                                    <span style="color: green;">{{ item.unit_price|currency }}</span>
+                                    <br><small style="color: green;">(Disc: {{ item.discount|currency }})</small>
+                                {% else %}
+                                    {{ item.unit_price|currency }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form action="{% url 'update_cart' item.product.id %}" method="post" style="display: flex; gap: 5px; align-items: center;">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock_quantity }}" class="form-control" style="width: 70px;" onchange="this.form.submit()">
+                                </form>
+                            </td>
+                            <td>{{ item.subtotal|currency }}</td>
+                            <td>
+                                <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger" style="padding: 5px 10px;">Remove</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 1rem; gap: 20px;">
+            <h3>Total: {{ cart_total|currency }}</h3>
+            <a href="{% url 'checkout' %}" class="btn">Proceed to Checkout</a>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Your cart is empty. <a href="{% url 'product_list' %}">Go to the products page</a> and add items.
+        </div>
+    {% endif %}
+{% endblock %}
