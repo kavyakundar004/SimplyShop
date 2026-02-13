@@ -23,9 +23,8 @@ Django==5.2.6
 django-crispy-forms==2.4
 et_xmlfile==2.0.0
 filelock==3.20.0
-Flask==3.1.2
-Flask-Login==0.6.3
-Flask-SQLAlchemy==3.1.1
+# Removed Flask and Selenium related packages that are likely not needed for this Django app
+# and could cause build failures on Render.
 frozenlist==1.8.0
 gitdb==4.0.12
 GitPython==3.1.45
@@ -52,9 +51,8 @@ jsonschema-specifications==2025.9.1
 lxml==6.0.2
 MarkupSafe==3.0.3
 multidict==6.7.0
-narwhals==2.14.0
-npm==0.1.1
-numpy==2.3.4
+narwhals==2.15.0
+numpy==2.4.0
 oauth2client==4.1.3
 oauthlib==3.3.1
 openpyxl==3.1.5
@@ -91,7 +89,7 @@ requests-file==2.1.0
 requests-oauthlib==2.0.0
 rpds-py==0.30.0
 rsa==4.9.1
-selenium==4.15.2
+# Removed selenium related
 setuptools==80.9.0
 six==1.17.0
 smmap==5.0.2
@@ -112,12 +110,12 @@ TwoCaptcha==0.0.1
 typing-inspection==0.4.2
 typing_extensions==4.14.1
 tzdata==2025.2
-undetected-chromedriver==3.5.5
+# Removed more browser related
 uritemplate==4.2.0
 urllib3==2.5.0
 vercel==0.4.0
 watchdog==6.0.0
-webdriver-manager==4.0.2
+# Removed webdriver-manager
 webencodings==0.5.1
 websocket-client==1.8.0
 websockets==15.0.1
