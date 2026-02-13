@@ -32,7 +32,7 @@ A comprehensive, web-based management system designed for small to medium-sized 
 - **Backend:** [Django](https://www.djangoproject.com/) (Python)
 - **Frontend:** HTML5, CSS3, [Bootstrap 5](https://getbootstrap.com/)
 - **Database:** SQLite (Default), PostgreSQL compatible
-- **Deployment:** [Vercel](https://vercel.com/)
+- **Deployment:** [Render](https://render.com/)
 
 ## 🏁 Getting Started
 
@@ -74,10 +74,13 @@ A comprehensive, web-based management system designed for small to medium-sized 
 - `static/`: CSS, JavaScript, and images.
 - `templates/`: HTML templates for the UI.
 
-## ☁️ Deployment (Vercel)
-The project is configured for easy deployment on Vercel using `vercel.json`.
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run `vercel` in the project root.
+## ☁️ Deployment (Render)
+The project is configured for easy deployment on Render using `render.yaml`.
+1. Push your code to GitHub.
+2. Log in to [Render](https://render.com/).
+3. Click **New +** > **Blueprint**.
+4. Connect your GitHub repository.
+5. Render will automatically detect the `render.yaml` and set up the service.
 
 ## 📄 License
 This project is licensed under the MIT License.
