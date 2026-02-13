@@ -1,0 +1,43 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Price Checker - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Price Checker</h2>
+        <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                {% csrf_token %}
+                <input type="text" name="code" value="{{ code }}" class="form-control" placeholder="Scan or enter code" autofocus>
+                <button type="submit" class="btn">Check</button>
+            </form>
+
+            {% if product %}
+                <div style="margin-top: 1.5rem;">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <th style="text-align: left;">Product</th>
+                                <td>{{ product.name }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left;">Price</th>
+                                <td>{{ product.price|currency }}</td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left;">Stock</th>
+                                <td>{{ product.stock_quantity }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+

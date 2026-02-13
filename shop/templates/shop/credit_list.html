@@ -1,0 +1,182 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Udhari - Grocery Shop{% endblock %}
+
+{% block content %}
+    <h2>Udhari (Credit) List</h2>
+
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-body">
+            <h3>Add New Udhari Entry</h3>
+            <form method="post" action="{% url 'add_credit' %}">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label>Customer (dropdown)</label>
+                        <select name="customer_id" class="form-control">
+                            <option value="">-- Select Customer --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }}{% if customer.phone %} ({{ customer.phone }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Ya naya customer niche likho</small>
+                        <input type="text" name="customer_name" class="form-control" placeholder="New customer name (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Phone (optional)</label>
+                        <input type="text" name="customer_phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Item (Product dropdown)</label>
+                        <select name="product_id" id="product-select" class="form-control">
+                            <option value="">-- Select Product --</option>
+                            {% for product in products %}
+                                <option value="{{ product.id }}" data-price="{{ product.price }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Agar product list me nahi hai to niche item name likho</small>
+                        <input type="text" name="item_name" class="form-control" placeholder="Custom item name (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="quantity" id="quantity-input" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Amount (auto calculate)</label>
+                        <input type="number" step="0.01" name="amount" id="amount-input" class="form-control" value="0">
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button type="submit" class="btn">Save Udhari</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h3>Current Udhari</h3>
+        <form method="get" style="display: flex; gap: 10px; align-items: center;">
+            <label>Sort by customer:</label>
+            <select name="sort" class="form-control" onchange="this.form.submit()">
+                <option value="">Default</option>
+                <option value="customer_asc" {% if current_sort == 'customer_asc' %}selected{% endif %}>A → Z</option>
+                <option value="customer_desc" {% if current_sort == 'customer_desc' %}selected{% endif %}>Z → A</option>
+            </select>
+        </form>
+    </div>
+    <p><strong>Total Outstanding:</strong> {{ total_outstanding|currency }}</p>
+
+    {% if reminder_rows %}
+        <div class="card" style="margin: 1rem 0;">
+            <div class="card-body">
+                <h3>Quick Reminders (WhatsApp / SMS)</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Pending Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in reminder_rows %}
+                                <tr>
+                                    <td>{{ row.customer.name }}</td>
+                                    <td>{{ row.customer.phone|default:"-" }}</td>
+                                    <td>{{ row.amount|currency }}</td>
+                                    <td>
+                                        {% if row.customer.phone %}
+                                            {% with text=row.body|urlencode %}
+                                                <a href="https://wa.me/{{ row.customer.phone }}?text={{ text }}" target="_blank" class="btn btn-secondary" style="padding:4px 8px;">WhatsApp</a>
+                                                <a href="sms:{{ row.customer.phone }}?&body={{ text }}" class="btn btn-secondary" style="padding:4px 8px;">SMS</a>
+                                            {% endwith %}
+                                        {% else %}
+                                            <span style="font-size: 0.8rem; color: #888;">No phone</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if credits %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Date Taken</th>
+                        <th>Status</th>
+                        <th>Paid On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for credit in credits %}
+                        <tr>
+                            <td>{{ credit.customer.name }}<br><small>{{ credit.customer.phone }}</small></td>
+                            <td>{{ credit.item_name }}</td>
+                            <td>{{ credit.quantity }}</td>
+                            <td>₹{{ credit.amount }}</td>
+                            <td>{{ credit.date_taken|date:"d M Y, H:i" }}</td>
+                            <td>
+                                {% if credit.is_paid %}
+                                    <span style="color: green;">Paid</span>
+                                {% else %}
+                                    <span style="color: red;">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if credit.date_paid %}
+                                    {{ credit.date_paid|date:"d M Y, H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not credit.is_paid %}
+                                    <a href="{% url 'mark_credit_paid' credit.id %}" class="btn btn-secondary" style="padding: 5px 10px;">Mark Paid</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No udhari entries yet.</p>
+    {% endif %}
+    <script>
+        (function() {
+            const productSelect = document.getElementById('product-select');
+            const quantityInput = document.getElementById('quantity-input');
+            const amountInput = document.getElementById('amount-input');
+
+            function recalcAmount() {
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                const price = parseFloat(selectedOption.getAttribute('data-price') || '0');
+                const qty = parseFloat(quantityInput.value || '0');
+                if (price > 0 && qty > 0) {
+                    amountInput.value = (price * qty).toFixed(2);
+                }
+            }
+
+            if (productSelect && quantityInput && amountInput) {
+                productSelect.addEventListener('change', recalcAmount);
+                quantityInput.addEventListener('input', recalcAmount);
+            }
+        })();
+    </script>
+{% endblock %}

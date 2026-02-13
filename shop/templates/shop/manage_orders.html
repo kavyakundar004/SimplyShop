@@ -1,0 +1,73 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Manage Orders - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Manage Orders</h2>
+        <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <form method="get" style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+        <label>Status:</label>
+        <select name="status" class="form-control" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for value,label in status_choices %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if orders %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>
+                                {{ order.customer_name }}<br>
+                                <small>{{ order.customer_phone }}</small>
+                            </td>
+                            <td>{{ order.get_status_display }}</td>
+                            <td>{{ order.total_amount|currency }}</td>
+                            <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                            <td>
+                                {% for item in order.items.all %}
+                                    {{ item.quantity }} x {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    -
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if order.status == 'pending' or order.status == 'preparing' %}
+                                    <a href="{% url 'mark_order_completed' order.id %}" class="btn btn-secondary" style="padding: 5px 10px;">Mark Completed</a>
+                                {% elif order.status == 'completed' %}
+                                    <a href="{% url 'return_order' order.id %}" class="btn btn-secondary" style="padding: 5px 10px;">Return</a>
+                                {% elif order.status == 'returned' %}
+                                    Returned
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Products - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div class="search-bar fade-in">
+        <form method="get" action="" style="display: flex; gap: 10px; width: 100%; align-items: center;">
+            <input id="product-search" type="text" name="q" class="form-control" placeholder="Search products..." value="{{ search_query|default:'' }}">
+            <select name="category" class="form-control" style="width: 200px;" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if current_category == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if search_query or current_category %}
+                <a href="{% url 'product_list' %}" class="btn btn-secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <h2>Available Products</h2>
+
+    {% if products %}
+        <div class="product-grid fade-in" id="product-grid">
+            {% for product in products %}
+                <div class="card">
+                    <div class="card-img">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            <span>{{ product.name|slice:":1" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ product.name }}</h3>
+                        <p class="card-text">{{ product.description|truncatechars:50 }}</p>
+                        <p class="card-text">Category: {{ product.category.name|default:"General" }}</p>
+                        {% if product.discount_price > 0 %}
+                            <span class="price" style="text-decoration: line-through; color: #888; font-size: 0.9em;">{{ product.price|currency }}</span>
+                            <span class="price" style="color: green; margin-left: 5px;">{{ product.price|subtract:product.discount_price|currency }}</span>
+                        {% else %}
+                            <span class="price">{{ product.price|currency }}</span>
+                        {% endif %}
+                        
+                        {% if product.stock_quantity > 0 %}
+                            <a href="{% url 'add_to_cart' product.id %}" class="btn btn-block">Add to Cart</a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-block" disabled>Out of Stock</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div id="no-products-client" class="alert alert-info" style="display:none; margin-top: 1rem;">
+            No products found matching your criteria.
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No products found matching your criteria.
+        </div>
+    {% endif %}
+    <script>
+    (function() {
+        var input = document.getElementById("product-search");
+        var grid = document.getElementById("product-grid");
+        var emptyMsg = document.getElementById("no-products-client");
+        if (!input || !grid) {
+            return;
+        }
+        var cards = grid.getElementsByClassName("card");
+        input.addEventListener("input", function() {
+            var q = input.value.toLowerCase().trim();
+            var anyVisible = false;
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
+                var nameEl = card.querySelector(".card-title");
+                var text = nameEl ? nameEl.textContent.toLowerCase() : "";
+                if (!q || text.indexOf(q) !== -1) {
+                    card.style.display = "";
+                    anyVisible = true;
+                } else {
+                    card.style.display = "none";
+                }
+            }
+            if (emptyMsg) {
+                emptyMsg.style.display = anyVisible ? "none" : "";
+            }
+        });
+    })();
+    </script>
+{% endblock %}

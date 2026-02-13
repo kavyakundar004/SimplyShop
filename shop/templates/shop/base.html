@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Grocery Shop{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'shop/style.css' %}">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="{% url 'product_list' %}" class="logo">🛒 Grocery Shop</a>
+            <nav>
+                <a href="{% url 'product_list' %}" class="{% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">Products</a>
+                <a href="{% url 'cart_summary' %}" class="{% if request.resolver_match.url_name == 'cart_summary' %}active{% endif %}">
+                    Cart
+                    {% if request.session.cart|length > 0 %}
+                        <span class="cart-badge">{{ request.session.cart|length }}</span>
+                    {% endif %}
+                </a>
+                
+                {% if user.is_authenticated and user.is_staff %}
+                    <a href="{% url 'shop_dashboard' %}" class="{% if request.resolver_match.url_name == 'shop_dashboard' or request.resolver_match.url_name == 'manage_orders' or request.resolver_match.url_name == 'manage_products' %}active{% endif %}">Dashboard</a>
+                    <a href="{% url 'customer_details' %}" class="{% if request.resolver_match.url_name == 'customer_details' %}active{% endif %}">Customers</a>
+                    <a href="{% url 'credit_list' %}" class="{% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'add_credit' %}active{% endif %}">Udhari</a>
+                    <a href="{% url 'sales_dashboard' %}" class="{% if request.resolver_match.url_name == 'sales_dashboard' %}active{% endif %}">Sales</a>
+                    <a href="{% url 'wholesaler_dashboard' %}" class="{% if request.resolver_match.url_name == 'wholesaler_dashboard' %}active{% endif %}">Wholesalers</a>
+                    <a href="{% url 'shop_logout' %}">Logout</a>
+                {% else %}
+                    <a href="{% url 'shop_login' %}" class="{% if request.resolver_match.url_name == 'shop_login' %}active{% endif %}">Shopkeeper Login</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <div class="container fade-in">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; {% now "Y" %} Grocery Shop. All rights reserved.</p>
+    </footer>
+</body>
+</html>

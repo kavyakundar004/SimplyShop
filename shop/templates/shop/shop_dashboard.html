@@ -1,0 +1,160 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Dashboard - Grocery Shop{% endblock %}
+
+{% block content %}
+    <h2>Shop Dashboard</h2>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+        <a href="{% url 'pos' %}" class="btn">Open POS</a>
+        <a href="{% url 'price_checker' %}" class="btn btn-secondary">Price Checker</a>
+        <a href="{% url 'sales_dashboard' %}" class="btn btn-secondary">Sales Overview</a>
+        <a href="{% url 'credit_list' %}" class="btn btn-secondary">Udhari</a>
+        <a href="{% url 'manage_expenses' %}" class="btn btn-secondary">Expenses</a>
+        <a href="{% url 'suggested_purchases' %}" class="btn btn-secondary">To Buy List</a>
+        <a href="{% url 'backup_database' %}" class="btn btn-secondary" style="margin-left:auto;">Backup Data</a>
+    </div>
+
+    <div class="dashboard-stats fade-in">
+        <div class="stat-card">
+            <div class="stat-number">{{ products.count }}</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ pending_orders_count }}</div>
+            <div class="stat-label">Pending Orders</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_sales|currency|default:"₹0.00" }}</div>
+            <div class="stat-label">Total Sales</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+        
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Recent Orders</h3>
+                    <a href="{% url 'manage_orders' %}" class="btn btn-secondary" style="font-size: 0.8rem;">Manage Orders</a>
+                </div>
+                {% if recent_orders %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                    <tr>
+                                        <td>#{{ order.id }}</td>
+                                        <td>
+                                            {{ order.customer_name }}<br>
+                                            <small>{{ order.customer_phone }}</small>
+                                        </td>
+                                        <td>
+                                            <span style="padding: 2px 6px; border-radius: 4px; background: {% if order.status == 'completed' %}#e8f5e9; color: #2e7d32{% elif order.status == 'pending' %}#fff3e0; color: #ef6c00{% else %}#f5f5f5{% endif %};">
+                                                {{ order.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% for item in order.items.all %}
+                                                {{ item.quantity }} x {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ order.total_amount|currency }}</td>
+                                        <td>{{ order.created_at|date:"M d, H:i" }}</td>
+                                        <td>
+                                            {% if order.status != 'completed' %}
+                                                <a href="{% url 'mark_order_completed' order.id %}" class="btn btn-secondary" style="padding: 5px 10px;">Mark Completed</a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No orders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Inventory</h3>
+                    <a href="{% url 'manage_products' %}" class="btn btn-secondary" style="font-size: 0.8rem;">Manage Products</a>
+                </div>
+                
+                {% if products %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Expiry</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.category.name|default:"-" }}</td>
+                                        <td>₹{{ product.price }}</td>
+                                        <td>
+                                            {% if product.stock_quantity <= product.reorder_threshold %}
+                                                <span style="color: red; font-weight: bold;">{{ product.stock_quantity }} (Low)</span>
+                                            {% else %}
+                                                {{ product.stock_quantity }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if product.expiry_date %}
+                                                {% if product.expiry_date < today %}
+                                                    <span style="color: red; font-weight: bold;">Expired ({{ product.expiry_date|date:"d M Y" }})</span>
+                                                {% elif product.expiry_date <= near_expiry_limit %}
+                                                    <span style="color: #ef6c00; font-weight: bold;">Expiring Soon ({{ product.expiry_date|date:"d M Y" }})</span>
+                                                {% else %}
+                                                    {{ product.expiry_date|date:"d M Y" }}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if product.is_active %}
+                                                <span style="color: green;">Active</span>
+                                            {% else %}
+                                                <span style="color: grey;">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No products created yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
