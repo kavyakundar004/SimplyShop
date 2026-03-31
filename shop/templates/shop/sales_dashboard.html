@@ -1,0 +1,309 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Sales - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Sales Overview</h2>
+        <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <div class="dashboard-stats fade-in">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats_today.revenue|default:"0.00"|currency }}</div>
+            <div class="stat-label">Today's Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats_today.profit|default:"0.00"|currency }}</div>
+            <div class="stat-label">Gross Profit</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #dc3545;">{{ stats_today.expenses|default:"0.00"|currency }}</div>
+            <div class="stat-label">Expenses</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #28a745;">{{ stats_today.net_profit|default:"0.00"|currency }}</div>
+            <div class="stat-label">Net Profit</div>
+        </div>
+    </div>
+
+    <div class="dashboard-stats fade-in" style="margin-top: 1.5rem;">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats_week.revenue|default:"0.00"|currency }}</div>
+            <div class="stat-label">This Week Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats_month.revenue|default:"0.00"|currency }}</div>
+            <div class="stat-label">This Month Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats_year.revenue|default:"0.00"|currency }}</div>
+            <div class="stat-label">This Year Revenue</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+        <div class="card">
+            <div class="card-body">
+                <h3>Top Selling Products (30 days)</h3>
+                {% if top_sellers %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Qty Sold</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in top_sellers %}
+                                    <tr>
+                                        <td>{{ row.product.name }}</td>
+                                        <td>{{ row.category }}</td>
+                                        <td>{{ row.qty }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No sales data.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3>Slow Movers (30 days)</h3>
+                {% if slow_movers %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Qty Sold</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in slow_movers %}
+                                    <tr>
+                                        <td>{{ row.product.name }}</td>
+                                        <td>{{ row.category }}</td>
+                                        <td>{{ row.qty }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No sales data.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+        <div class="card">
+            <div class="card-body">
+                <h3>Hourly Sales Heatmap (7 days)</h3>
+                <div style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px;">
+                    {% for count in hourly_counts %}
+                        {% with idx=forloop.counter0 %}
+                            <div title="{{ idx }}h: {{ count }}"
+                                 style="height: 28px; background: rgba(0, 150, 255, {% if count > 0 %}0.2{% else %}0.05{% endif %}); border-radius: 4px;"></div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-top: 6px; font-size: 0.8rem;">
+                    <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3>Weekly Trends (Top Products)</h3>
+                {% if trends %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    {% for w in trend_weeks %}
+                                        <th>{{ w|date:"d M" }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pid, series in trends.items %}
+                                    <tr>
+                                        <td>
+                                            {% for p in products %}
+                                                {% if p.id == pid %}{{ p.name }}{% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        {% for v in series %}
+                                            <td>{{ v }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No trend data.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+        <div class="card">
+            <div class="card-body">
+                <h3>Profit by Category (30 days)</h3>
+                {% if profit_by_category %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in profit_by_category %}
+                                    <tr>
+                                        <td>{{ row.category_name|default:"-" }}</td>
+                                        <td>₹{{ row.revenue|default:"0.00" }}</td>
+                                        <td>₹{{ row.profit|default:"0.00" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No profit data.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3>Profit by Product (30 days)</h3>
+                {% if profit_by_product %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in profit_by_product %}
+                                    <tr>
+                                        <td>{{ row.product_name }}</td>
+                                        <td>{{ row.category_name|default:"-" }}</td>
+                                        <td>₹{{ row.revenue|default:"0.00" }}</td>
+                                        <td>₹{{ row.profit|default:"0.00" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No profit data.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem;">
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Recent Completed Orders</h3>
+                    <a href="{% url 'manage_orders' %}" class="btn btn-secondary" style="font-size: 0.8rem;">Manage Orders</a>
+                </div>
+                {% if recent_completed_orders %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_completed_orders %}
+                                    <tr>
+                                        <td>#{{ order.id }}</td>
+                                        <td>{{ order.customer_name }}</td>
+                                        <td>₹{{ order.total_amount }}</td>
+                                        <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No completed orders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3>GST Summary & Export</h3>
+                <div class="table-responsive" style="margin-bottom: 1rem;">
+                    {% if gst_summary %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Tax Rate (%)</th>
+                                    <th>Taxable Value (30 days)</th>
+                                    <th>GST Amount (30 days)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in gst_summary %}
+                                    <tr>
+                                        <td>{{ row.product__name }}</td>
+                                        <td>
+                                            {% for p in products %}
+                                                {% if p.id == row.product_id %}{{ p.tax_rate_percent }}{% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>₹{{ row.revenue|default:"0.00" }}</td>
+                                        <td>₹{{ row.tax|default:"0.00" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No GST data for last 30 days.</p>
+                    {% endif %}
+                </div>
+                <form method="post" style="margin-bottom: 1.5rem;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="export_gst">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <label for="month">Download Monthly GST CSV:</label>
+                        <input type="month" id="month" name="month" class="form-control" style="max-width: 200px;">
+                        <button type="submit" class="btn btn-secondary">Download</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

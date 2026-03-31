@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: simply-shop
+    plan: free
+    env: python
+    buildCommand: "chmod +x build.sh && ./build.sh"
+    startCommand: "gunicorn grocery_shop.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.10"

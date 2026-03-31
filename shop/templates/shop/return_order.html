@@ -1,0 +1,60 @@
+{% extends "shop/base.html" %}
+{% load custom_filters %}
+
+{% block title %}Process Return - Grocery Shop{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Process Return for Order #{{ order.id }}</h2>
+        <a href="{% url 'manage_orders' %}" class="btn btn-secondary">Back to Orders</a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty Ordered</th>
+                                <th>Unit Price</th>
+                                <th>Return Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.unit_price|currency }}</td>
+                                    <td>
+                                        <input type="number" name="qty_{{ item.id }}" class="form-control" min="0" max="{{ item.quantity }}" value="0">
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="form-group">
+                    <label>Reason</label>
+                    <textarea name="reason" class="form-control" rows="3" placeholder="Reason for return (optional)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Refund Method (optional)</label>
+                    <select name="refund_method" class="form-control">
+                        <option value="">-- None --</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="upi">UPI</option>
+                    </select>
+                </div>
+                <div style="text-align: right;">
+                    <button type="submit" class="btn">Process Return</button>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
